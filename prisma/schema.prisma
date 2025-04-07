@@ -75,6 +75,7 @@ model Analytics {
   totalWaste    Float
   recycledWaste Float
   landfillWaste Float
+  organicWaste  Float
   collectionCost Float
   processingCost Float
   transportationCost Float

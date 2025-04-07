@@ -45,9 +45,11 @@ export function WasteAnalytics() {
         if (!response.ok) {
           throw new Error('Failed to fetch waste analytics')
         }
-        const result = await response.json() as WasteData
+        const result = await response.json()
+        console.log('Fetched waste analytics data:', result)
         setData(result)
       } catch (err) {
+        console.error('Error fetching waste analytics:', err)
         setError(err instanceof Error ? err.message : 'An error occurred')
       } finally {
         setLoading(false)
@@ -91,6 +93,8 @@ export function WasteAnalytics() {
     return null
   }
 
+  console.log('Rendering waste analytics with data:', data)
+
   return (
     <div className="grid gap-4 md:grid-cols-2">
       <Card className="col-span-2">
@@ -117,28 +121,31 @@ export function WasteAnalytics() {
       <Card>
         <CardHeader>
           <CardTitle>Waste Composition</CardTitle>
-          <CardDescription>Breakdown of waste by type</CardDescription>
+          <CardDescription>Distribution of waste types</CardDescription>
         </CardHeader>
         <CardContent>
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie
-                data={data.wasteComposition}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                outerRadius={100}
-                fill="#8884d8"
-                dataKey="value"
-                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-              >
-                {data.wasteComposition.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
+          <div className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={data.wasteComposition}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="value"
+                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                >
+                  {data.wasteComposition.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
         </CardContent>
       </Card>
 
@@ -148,18 +155,20 @@ export function WasteAnalytics() {
           <CardDescription>Total waste collection trends over time</CardDescription>
         </CardHeader>
         <CardContent>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={data.monthlyData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Line type="monotone" dataKey="general" name="General Waste" stroke="#6b7280" activeDot={{ r: 8 }} />
-              <Line type="monotone" dataKey="recyclable" name="Recyclable" stroke="#3b82f6" />
-              <Line type="monotone" dataKey="organic" name="Organic" stroke="#10b981" />
-            </LineChart>
-          </ResponsiveContainer>
+          <div className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={data.monthlyData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Line type="monotone" dataKey="general" name="General Waste" stroke="#6b7280" activeDot={{ r: 8 }} />
+                <Line type="monotone" dataKey="recyclable" name="Recyclable" stroke="#3b82f6" />
+                <Line type="monotone" dataKey="organic" name="Organic" stroke="#10b981" />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
         </CardContent>
       </Card>
     </div>

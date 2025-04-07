@@ -1,24 +1,57 @@
-import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
+import { withAuth } from 'next-auth/middleware';
+import { NextResponse } from 'next/server';
 
-// This function can be marked `async` if using `await` inside
-export function middleware(request: NextRequest) {
-  // Add your middleware logic here
-  // For example, you can check authentication, add headers, etc.
-  
-  return NextResponse.next()
-}
+export default withAuth(
+  function middleware(req) {
+    const token = req.nextauth.token;
+    const isAdmin = token?.role === 'ADMIN';
+    const isUser = token?.role === 'USER';
 
-// See "Matching Paths" below to learn more
+    // Redirect old dashboard route to home
+    if (req.nextUrl.pathname === '/dashboard') {
+      return NextResponse.redirect(new URL('/', req.url));
+    }
+
+    // Allow access to login page and public assets
+    if (
+      req.nextUrl.pathname === '/login' ||
+      req.nextUrl.pathname.startsWith('/_next') ||
+      req.nextUrl.pathname.startsWith('/api/auth') ||
+      req.nextUrl.pathname.includes('.')
+    ) {
+      return NextResponse.next();
+    }
+
+    // If not authenticated, redirect to login without callback
+    if (!token) {
+      return NextResponse.redirect(new URL('/login', req.url));
+    }
+
+    // Protect admin routes
+    if (req.nextUrl.pathname.startsWith('/admin') && !isAdmin) {
+      return NextResponse.redirect(new URL('/', req.url));
+    }
+
+    // Redirect to appropriate page based on role
+    if (req.nextUrl.pathname === '/') {
+      if (isAdmin) {
+        return NextResponse.redirect(new URL('/admin/dashboard', req.url));
+      }
+      // Regular users stay on the main page
+    }
+
+    return NextResponse.next();
+  },
+  {
+    callbacks: {
+      authorized: ({ token }) => !!token,
+    },
+    pages: {
+      signIn: '/login',
+    },
+  }
+);
+
 export const config = {
-  matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     */
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
-  ],
-} 
+  matcher: ['/((?!api/auth|_next/static|_next/image|favicon.ico).*)'],
+}; 

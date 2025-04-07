@@ -53,17 +53,22 @@ export function BinsList() {
   const updateBinStatus = async (binId: number, status: string) => {
     try {
       const token = localStorage.getItem("token")
+      const user = JSON.parse(localStorage.getItem("user") || "{}")
+      
       const response = await fetch(`/api/waste-bins/${binId}/status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
+          'x-user-id': user.id?.toString() || '',
+          'x-user-role': user.role || '',
         },
         body: JSON.stringify({ status }),
       })
 
       if (!response.ok) {
-        throw new Error('Failed to update bin status')
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to update bin status')
       }
 
       // Refresh the bins list
@@ -73,6 +78,32 @@ export function BinsList() {
       setBins(updatedBins)
     } catch (err) {
       console.error('Error updating bin status:', err)
+    }
+  }
+
+  const deleteBin = async (binId: number) => {
+    try {
+      const token = localStorage.getItem("token")
+      const user = JSON.parse(localStorage.getItem("user") || "{}")
+      
+      const response = await fetch(`/api/waste-bins/${binId}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'x-user-id': user.id?.toString() || '',
+          'x-user-role': user.role || '',
+        },
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to delete bin')
+      }
+
+      // Remove the deleted bin from the list
+      setBins(bins.filter(bin => bin.id !== binId))
+    } catch (err) {
+      console.error('Error deleting bin:', err)
     }
   }
 
@@ -155,16 +186,13 @@ export function BinsList() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => updateBinStatus(bin.id, "active")}>
-                    Mark as Emptied
-                  </DropdownMenuItem>
                   {isAdmin && (
-                    <>
-                      <DropdownMenuItem>View Details</DropdownMenuItem>
-                      <DropdownMenuItem>Edit Bin</DropdownMenuItem>
-                      <DropdownMenuItem>Schedule Collection</DropdownMenuItem>
-                      <DropdownMenuItem>Maintenance</DropdownMenuItem>
-                    </>
+                    <DropdownMenuItem 
+                      className="text-red-600 focus:text-red-600"
+                      onClick={() => deleteBin(bin.id)}
+                    >
+                      Delete Bin
+                    </DropdownMenuItem>
                   )}
                 </DropdownMenuContent>
               </DropdownMenu>

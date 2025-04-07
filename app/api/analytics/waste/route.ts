@@ -1,6 +1,21 @@
 import { NextResponse } from "next/server"
 import { prisma } from "../../../../lib/prisma"
 
+interface AnalyticsData {
+  id: number
+  date: Date
+  totalWaste: number
+  recycledWaste: number
+  landfillWaste: number
+  organicWaste: number
+  collectionCost: number
+  processingCost: number
+  transportationCost: number
+  maintenanceCost: number
+  createdAt: Date
+  updatedAt: Date
+}
+
 export async function GET() {
   try {
     // Get the last 6 months of analytics data
@@ -16,7 +31,7 @@ export async function GET() {
       orderBy: {
         date: 'asc'
       }
-    })
+    }) as AnalyticsData[]
 
     // Group data by month
     const monthlyData = analytics.reduce((acc: any[], curr) => {
@@ -26,13 +41,13 @@ export async function GET() {
       if (existingMonth) {
         existingMonth.general += curr.landfillWaste
         existingMonth.recyclable += curr.recycledWaste
-        existingMonth.organic += curr.totalWaste - curr.landfillWaste - curr.recycledWaste
+        existingMonth.organic += curr.organicWaste
       } else {
         acc.push({
           name: month,
           general: curr.landfillWaste,
           recyclable: curr.recycledWaste,
-          organic: curr.totalWaste - curr.landfillWaste - curr.recycledWaste
+          organic: curr.organicWaste
         })
       }
       
@@ -43,7 +58,7 @@ export async function GET() {
     const totalWaste = analytics.reduce((sum, curr) => sum + curr.totalWaste, 0)
     const totalRecycled = analytics.reduce((sum, curr) => sum + curr.recycledWaste, 0)
     const totalLandfill = analytics.reduce((sum, curr) => sum + curr.landfillWaste, 0)
-    const totalOrganic = totalWaste - totalRecycled - totalLandfill
+    const totalOrganic = analytics.reduce((sum, curr) => sum + curr.organicWaste, 0)
 
     const wasteComposition = [
       { name: "General", value: (totalLandfill / totalWaste) * 100 },

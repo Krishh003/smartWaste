@@ -7,7 +7,7 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    const headersList = headers()
+    const headersList = await headers()
     const userId = headersList.get("x-user-id")
     const userRole = headersList.get("x-user-role")
 
@@ -18,10 +18,18 @@ export async function PUT(
     const { status } = await request.json()
     const binId = parseInt(params.id)
 
+    // Only allow active/inactive status changes
+    if (status !== "active" && status !== "inactive") {
+      return NextResponse.json(
+        { error: "Invalid status. Only 'active' or 'inactive' are allowed" },
+        { status: 400 }
+      )
+    }
+
     // Only allow updating status to "active" for regular users
     if (userRole !== "ADMIN" && status !== "active") {
       return NextResponse.json(
-        { error: "Only admins can set non-active status" },
+        { error: "Only admins can set inactive status" },
         { status: 403 }
       )
     }

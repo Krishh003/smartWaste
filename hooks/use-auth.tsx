@@ -1,84 +1,34 @@
 "use client"
 
-import { createContext, useContext, useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
-
-interface User {
-  id: number
-  email: string
-  name: string
-  role: "ADMIN" | "USER"
-}
+import { createContext, useContext, ReactNode } from "react"
+import { useSession } from "next-auth/react"
 
 interface AuthContextType {
-  user: User | null
-  loading: boolean
-  login: (email: string, password: string) => Promise<void>
-  logout: () => void
+  isAuthenticated: boolean
   isAdmin: boolean
+  user: {
+    name?: string | null
+    email?: string | null
+    role?: "ADMIN" | "USER"
+  } | null
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined)
+const AuthContext = createContext<AuthContextType>({
+  isAuthenticated: false,
+  isAdmin: false,
+  user: null,
+})
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
-  const [loading, setLoading] = useState(true)
-  const router = useRouter()
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const { data: session, status } = useSession()
 
-  useEffect(() => {
-    // Check for stored user data on mount
-    const storedUser = localStorage.getItem("user")
-    if (storedUser) {
-      setUser(JSON.parse(storedUser))
-    }
-    setLoading(false)
-  }, [])
-
-  const login = async (email: string, password: string) => {
-    try {
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password }),
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to login")
-      }
-
-      localStorage.setItem("token", data.token)
-      localStorage.setItem("user", JSON.stringify(data.user))
-      setUser(data.user)
-      router.push("/")
-    } catch (error) {
-      throw error
-    }
+  const value = {
+    isAuthenticated: status === "authenticated",
+    isAdmin: session?.user?.role === "ADMIN",
+    user: session?.user || null,
   }
 
-  const logout = () => {
-    localStorage.removeItem("token")
-    localStorage.removeItem("user")
-    setUser(null)
-    router.push("/login")
-  }
-
-  return (
-    <AuthContext.Provider
-      value={{
-        user,
-        loading,
-        login,
-        logout,
-        isAdmin: user?.role === "ADMIN",
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
-  )
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 
 export function useAuth() {

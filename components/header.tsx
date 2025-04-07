@@ -1,8 +1,9 @@
 "use client"
 
-import { Bell, User } from "lucide-react"
+import { User } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { signOut } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { ModeToggle } from "@/components/mode-toggle"
@@ -12,18 +13,8 @@ export function Header() {
 
   const handleLogout = async () => {
     try {
-      const response = await fetch('/api/auth/logout', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      })
-
-      if (response.ok) {
-        router.push('/login')
-      } else {
-        console.error('Logout failed')
-      }
+      await signOut({ redirect: false })
+      router.push('/login')
     } catch (error) {
       console.error('Logout error:', error)
     }
@@ -36,10 +27,6 @@ export function Header() {
         <span>Smart Waste Management</span>
       </Link>
       <div className="ml-auto flex items-center gap-2">
-        <Button variant="ghost" size="icon">
-          <Bell className="h-5 w-5" />
-          <span className="sr-only">Notifications</span>
-        </Button>
         <ModeToggle />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -49,12 +36,6 @@ export function Header() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem asChild>
-              <Link href="/profile">Profile</Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link href="/settings">Settings</Link>
-            </DropdownMenuItem>
             <DropdownMenuItem onClick={handleLogout}>
               Logout
             </DropdownMenuItem>

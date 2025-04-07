@@ -6,6 +6,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Overview } from "@/components/dashboard/overview"
 import { RecentCollections } from "@/components/dashboard/recent-collections"
 import { WasteBinStatus } from "@/components/dashboard/waste-bin-status"
+import { Button } from "@/components/ui/button"
+import { useRouter } from "next/navigation"
+import { useSession } from "next-auth/react"
 
 interface DashboardMetrics {
   totalWaste: number
@@ -15,9 +18,21 @@ interface DashboardMetrics {
 }
 
 export default function Dashboard() {
+  const router = useRouter()
+  const { data: session, status } = useSession()
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/login')
+    } else if (status === 'authenticated' && session?.user?.role !== 'ADMIN') {
+      router.push('/')
+    } else {
+      setLoading(false)
+    }
+  }, [status, session, router])
 
   useEffect(() => {
     const fetchMetrics = async () => {
@@ -88,7 +103,9 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="flex min-h-screen w-full flex-col">
+    <div className="container mx-auto p-4">
+      <h1 className="text-2xl font-bold mb-4">Admin Overview</h1>
+      
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {renderMetricCard(

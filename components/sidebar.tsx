@@ -3,15 +3,17 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { BarChart3, Home, Map, Settings, Trash2, Truck } from "lucide-react"
+import { BarChart3, Home, Map, Settings, Trash2, Truck, LayoutDashboard } from "lucide-react"
 import { cn } from "../lib/utils"
 import { Button } from "../components/ui/button"
+import { useAuth } from "@/hooks/use-auth"
 import React from "react"
 
 export function Sidebar() {
   const pathname = usePathname()
   const [expanded, setExpanded] = useState(true)
   const [mounted, setMounted] = useState(false)
+  const { isAdmin } = useAuth()
 
   useEffect(() => {
     setMounted(true)
@@ -27,6 +29,11 @@ export function Sidebar() {
     { name: "Collection Routes", href: "/routes", icon: Truck },
     { name: "Analytics", href: "/analytics", icon: BarChart3 },
     { name: "Settings", href: "/settings", icon: Settings },
+  ]
+
+  const adminLinks = [
+    { name: "Overview", href: "/admin/overview", icon: LayoutDashboard },
+    ...links
   ]
 
   // Return a placeholder with the same dimensions during SSR
@@ -55,7 +62,7 @@ export function Sidebar() {
       </div>
       <nav className="flex-1 overflow-auto py-4">
         <ul className="grid gap-1 px-2">
-          {links.map((link) => (
+          {(isAdmin ? adminLinks : links).map((link) => (
             <li key={link.href}>
               <Link
                 href={link.href}
