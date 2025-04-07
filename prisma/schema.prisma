@@ -1,0 +1,84 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  USER
+}
+
+model User {
+  id        Int       @id @default(autoincrement())
+  email     String    @unique
+  name      String
+  password  String
+  role      UserRole  @default(USER)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  updatedBins WasteBin[]
+}
+
+model WasteBin {
+  id          Int       @id @default(autoincrement())
+  name        String
+  location    String
+  latitude    Float
+  longitude   Float
+  capacity    Float
+  currentLevel Float
+  status      String    @default("active") // active, full, maintenance
+  lastCollected DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  collections Collection[]
+  updatedBy   User?     @relation(fields: [updatedById], references: [id])
+  updatedById Int?
+}
+
+model CollectionRoute {
+  id          Int       @id @default(autoincrement())
+  name        String
+  status      String    @default("scheduled") // scheduled, in_progress, completed
+  startTime   DateTime
+  endTime     DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  collections Collection[]
+}
+
+model Collection {
+  id            Int           @id @default(autoincrement())
+  wasteBin      WasteBin      @relation(fields: [wasteBinId], references: [id])
+  wasteBinId    Int
+  route         CollectionRoute @relation(fields: [routeId], references: [id])
+  routeId       Int
+  collectedAt   DateTime
+  amount        Float
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+model Analytics {
+  id            Int       @id @default(autoincrement())
+  date          DateTime
+  totalWaste    Float
+  recycledWaste Float
+  landfillWaste Float
+  collectionCost Float
+  processingCost Float
+  transportationCost Float
+  maintenanceCost Float
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
